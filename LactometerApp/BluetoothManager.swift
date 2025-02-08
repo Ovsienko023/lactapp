@@ -9,8 +9,8 @@ class BluetoothManager: NSObject, ObservableObject, CBCentralManagerDelegate, CB
     
     private var centralManager: CBCentralManager!
     private let serviceUUID = CBUUID(string: "8653000A-43E6-47B7-9CB0-5FC21D4AE340") // UUID сервиса
-    private let subscriptionCharacteristicUUID = CBUUID(string: "8653000A-43E6-47B7-9CB0-5FC21D4AE341") // UUID для подписки
-    private let writeCharacteristicUUID = CBUUID(string: "8653000A-43E6-47B7-9FC0-5FC21D4AE342") // UUID для отправки сообщений
+    private let subscriptionCharacteristicUUID = CBUUID(string: "8653000B-43E6-47B7-9CB0-5FC21D4AE340") // UUID для подписки
+    private let writeCharacteristicUUID = CBUUID(string: "8653000C-43E6-47B7-9CB0-5FC21D4AE340") // UUID для отправки сообщений
     
     override init() {
         super.init()
@@ -95,7 +95,9 @@ class BluetoothManager: NSObject, ObservableObject, CBCentralManagerDelegate, CB
                 peripheral.setNotifyValue(true, for: characteristic)
             } else if characteristic.uuid == writeCharacteristicUUID {
                 // Отправляем запрос для получения данных
-                let requestData = Data([0x01]) // Пример запроса (замените на нужные данные)
+                let requestData = Data([0x04, 0x07,
+                                        0x00, 0x01,
+                                        0xFF, 0xFF]) // Пример запроса (замените на нужные данные)
                 peripheral.writeValue(requestData, for: characteristic, type: .withResponse)
             }
         }

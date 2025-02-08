@@ -95,27 +95,49 @@ class BluetoothManager: NSObject, ObservableObject, CBCentralManagerDelegate, CB
                 peripheral.setNotifyValue(true, for: characteristic)
             } else if characteristic.uuid == writeCharacteristicUUID {
                 // Отправляем запрос для получения данных
-                let requestData = Data([0x04, 0x07,
-                                        0x00, 0x01,
-                                        0xFF, 0xFF]) // Пример запроса (замените на нужные данные)
+                
+//                let n = numberToTwoBytes(1) todo: заменить 0x00, 0x01, на результат функции
+                
+                let requestData = Data(createCommand(ackRequired: true, command:  [0x04, 0x07,
+                                                                            0x00, 0x01,
+                                                                            0xFF, 0xFF,] ))
+
                 peripheral.writeValue(requestData, for: characteristic, type: .withResponse)
             }
         }
     }
     
+
+    // Метод для обработки получаемых сообщений
     func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
-        if let data = characteristic.value, !data.isEmpty {
-            if characteristic.uuid == subscriptionCharacteristicUUID {
-                // Декодируем данные о лактате
-                let lactateLevel = decodeLactateData(data)
-                print("Получен уровень лактата: \(lactateLevel)")
-                
-                DispatchQueue.main.async {
-                    self.lactateData.append(lactateLevel)
-                }
+        // Проверяем, не возникла ли ошибка при обновлении значения
+        if let error = error {
+            print("Ошибка обновления значения для характеристики \(characteristic.uuid): \(error.localizedDescription)")
+            return
+        }
+        
+        // Проверяем, что данные получены и не пустые
+        guard let data = characteristic.value, !data.isEmpty else {
+            print("Не получено данных для характеристики \(characteristic.uuid)")
+            return
+        }
+        
+        // Обработка данных для характеристики, на которую мы подписались
+        if characteristic.uuid == subscriptionCharacteristicUUID {
+            // Декодируем данные (например, уровень лактата) с помощью вспомогательного метода
+            let lactateLevel = decodeLactateData(data)
+            print("Получен уровень лактата: \(lactateLevel)")
+            
+            // Обновляем UI (или другие наблюдаемые свойства) на главном потоке
+            DispatchQueue.main.async {
+                self.lactateData.append(lactateLevel)
             }
+        } else {
+            // Если данные получены от неизвестной характеристики, можно обработать их иначе или вывести сообщение
+            print("Получены данные от неизвестной характеристики \(characteristic.uuid): \(data)")
         }
     }
+
     
     func peripheral(_ peripheral: CBPeripheral, didWriteValueFor characteristic: CBCharacteristic, error: Error?) {
         if characteristic.uuid == writeCharacteristicUUID {
@@ -129,3 +151,7 @@ class BluetoothManager: NSObject, ObservableObject, CBCentralManagerDelegate, CB
         return String(format: "%.2f", value)
     }
 }
+
+
+
+

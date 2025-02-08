@@ -15,9 +15,9 @@ struct DeviceDetailView: View {
                             .padding()
                     }
                 }
-                .navigationTitle("Данные о лактате")
+                .navigationTitle("Измерения")
             } else {
-                Text("Ожидание данных о лактате...")
+                Text("Получение данных...")
                     .font(.headline)
                     .padding()
             }

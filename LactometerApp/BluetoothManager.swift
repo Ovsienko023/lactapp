@@ -39,16 +39,31 @@ class BluetoothManager: NSObject, ObservableObject, CBCentralManagerDelegate, CB
     }
     
     func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String : Any], rssi RSSI: NSNumber) {
-        guard let name = peripheral.name, !name.isEmpty, name != "Неизвестное устройство" else {
-            return // Игнорируем устройства без имени или с именем "Неизвестное устройство"
-        }
-        
-        if !discoveredDevices.contains(where: { $0.identifier == peripheral.identifier }) {
-            DispatchQueue.main.async {
-                self.discoveredDevices.append(peripheral)
-                self.discoveredDevices.sort { $0.name ?? "" < $1.name ?? "" } // Сортировка по имени
+//        guard let name = peripheral.name, !name.isEmpty, name != "Неизвестное устройство" else {
+//            return // Игнорируем устройства без имени или с именем "Неизвестное устройство"
+//        }
+        guard let name = peripheral.name,
+                  !name.isEmpty,
+                  name != "Неизвестное устройство",
+                  name.contains("Eaglenos") else {
+                return // Игнорируем устройства, у которых нет имени, имя пустое, равно "Неизвестное устройство" или не содержит "Eaglenos"
             }
-        }
+            
+        
+//        if !discoveredDevices.contains(where: { $0.identifier == peripheral.identifier }) {
+//            DispatchQueue.main.async {
+//                self.discoveredDevices.append(peripheral)
+//                self.discoveredDevices.sort { $0.name ?? "" < $1.name ?? "" } // Сортировка по имени
+//            }
+//        }
+        // Выполняем проверку и добавление в главный поток
+            DispatchQueue.main.async {
+                // Если устройства с таким идентификатором ещё нет в массиве, добавляем его
+                if !self.discoveredDevices.contains(where: { $0.identifier == peripheral.identifier }) {
+                    self.discoveredDevices.append(peripheral)
+                    self.discoveredDevices.sort { ($0.name ?? "") < ($1.name ?? "") } // Сортировка по имени
+                }
+            }
     }
     
     // Подключение к устройству
@@ -130,7 +145,7 @@ class BluetoothManager: NSObject, ObservableObject, CBCentralManagerDelegate, CB
             
             // Обновляем UI (или другие наблюдаемые свойства) на главном потоке
             DispatchQueue.main.async {
-                self.lactateData.append(lactateLevel)
+                self.lactateData.insert(lactateLevel, at: 0)
             }
         } else {
             // Если данные получены от неизвестной характеристики, можно обработать их иначе или вывести сообщение
@@ -145,11 +160,37 @@ class BluetoothManager: NSObject, ObservableObject, CBCentralManagerDelegate, CB
         }
     }
     
-    // Декодирование данных о лактате
+//    // Декодирование данных о лактате
+//    private func decodeLactateData(_ data: Data) -> String {
+//        let value = data.withUnsafeBytes { $0.load(as: Float.self) }
+//        return String(format: "%.2f", value)
+//    }
+    
+    //    // Декодирование данных о лактате
     private func decodeLactateData(_ data: Data) -> String {
-        let value = data.withUnsafeBytes { $0.load(as: Float.self) }
-        return String(format: "%.2f", value)
+        // Преобразуем Data в строку шестнадцатеричных значений, разделённых пробелами,
+        // например: "EB 90 00 0D 01 00 10 ..."
+        let hexString = data.map { String(format: "%02X", $0) }
+                            .joined(separator: " ")
+        
+        // Парсим строку с помощью функции parseData, которая возвращает массив CommandRecord
+        let records = parseData(hexString: hexString)
+        
+//        print(records)
+        
+        // Если записи успешно разобраны, берем первую запись и извлекаем из неё значение.
+        // Здесь предполагается, что нужное значение лактата находится в поле value.
+        guard let firstRecord = records.first else {
+            return "0.00"
+        }
+        
+        // При необходимости можно выполнить преобразование или масштабирование значения.
+        // Например, если значение хранится как целое число, но его нужно интерпретировать как число с плавающей запятой.
+        let lactateValue = Float(firstRecord.value) / 10
+                
+        return String(format: "Лактат: %.1f моль/л \nДата: %@", lactateValue, firstRecord.formattedDateTime)
     }
+
 }
 
 

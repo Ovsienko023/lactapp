@@ -26,7 +26,7 @@ struct ContentView: View {
                     }
                 }
             }
-            .navigationTitle("Доступные устройства")
+            .navigationTitle("Устройства")
             .onAppear {
                 bluetoothManager.startScanning()
             }

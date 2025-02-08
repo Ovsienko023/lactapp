@@ -1,24 +1,35 @@
-//
-//  ContentView.swift
-//  LactometerApp
-//
-//  Created by Виктор Овсиенко on 01.02.2025.
-//
-
 import SwiftUI
 
 struct ContentView: View {
+    @StateObject private var bluetoothManager = BluetoothManager()
+    
     var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
+        NavigationView {
+            VStack {
+                if bluetoothManager.discoveredDevices.isEmpty {
+                    Text("Поиск устройств...")
+                        .font(.headline)
+                        .padding()
+                } else {
+                    List {
+                        ForEach(bluetoothManager.discoveredDevices, id: \.identifier) { peripheral in
+                            NavigationLink(destination: DeviceDetailView(bluetoothManager: bluetoothManager, peripheral: peripheral)) {
+                                VStack(alignment: .leading) {
+                                    Text(peripheral.name ?? "Неизвестное устройство")
+                                        .font(.headline)
+                                    Text("ID: \(peripheral.identifier.uuidString)")
+                                        .font(.subheadline)
+                                        .foregroundColor(.secondary)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            .navigationTitle("Доступные устройства")
+            .onAppear {
+                bluetoothManager.startScanning()
+            }
         }
-        .padding()
     }
-}
-
-#Preview {
-    ContentView()
 }

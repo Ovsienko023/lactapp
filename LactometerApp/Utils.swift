@@ -51,3 +51,12 @@ func createCommand(ackRequired: Bool, command: [UInt8]) -> [UInt8] {
     // Формируем итоговую команду
     return commandWithAck + crcBytes + endPosition
 }
+
+func formattedDateString(from timestamp: Double) -> String {
+    let date = Date(timeIntervalSince1970: timestamp)
+    let dateFormatter = DateFormatter()
+    dateFormatter.dateFormat = "yyyy.MM.dd HH:mm:ss"
+    
+    let newDate = date.addingTimeInterval(158387990) // разница в секундах
+    return dateFormatter.string(from: newDate)
+}

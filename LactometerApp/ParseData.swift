@@ -46,6 +46,24 @@ struct CommandRecord: Identifiable {
             // Здесь секунды подставляем как 0, так как они отсутствуют
             return String(format: "%d-%02d-%02d %02d:%02d:%02d", year, month, day, hour, minute, 0)
         }
+    
+    var timestamp: Double {
+        var components = DateComponents()
+        components.year = year
+        components.month = month
+        components.day = day
+        components.hour = hour
+        components.minute = minute
+        components.second = 0
+        
+        let calendar = Calendar.current
+        if let date = calendar.date(from: components) {
+            return date.timeIntervalSince1970
+        } else {
+            // Если не удалось сформировать дату, возвращаем 0 (или можно выбросить ошибку)
+            return 0
+        }
+    }
 }
 
 // MARK: - Функции для обработки данных
